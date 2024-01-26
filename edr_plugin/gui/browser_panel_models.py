@@ -44,7 +44,7 @@ class EdrRootItem(QgsDataCollectionItem):
 
     def actions(self, parent):
         actions = []
-        action_run = QAction(QIcon(icon_filepath("play.png")), "Run query", parent)
+        action_run = QAction(QIcon(icon_filepath("play.png")), "New query", parent)
         action_run.triggered.connect(self.plugin.run)
         actions.append(action_run)
         action_refresh = QAction(QIcon(icon_filepath("reload.png")), "Refresh", parent)
