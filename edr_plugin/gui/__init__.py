@@ -94,6 +94,8 @@ class EdrDialog(QDialog):
         if accept is False:
             return
         server_url = server_url.strip("/")
+        if self.server_url_cbo.findText(server_url) > -1:
+            return
         self.server_url_cbo.addItem(server_url)
         self.server_url_cbo.setCurrentText(server_url)
         self.set_edr_server_url()
