@@ -56,6 +56,7 @@ class EdrLayerManager:
                     self.plugin.communication.bar_info("File not loaded.")
                     return
         except ValueError as e:
+            self.plugin.communication.clear_message_bar()
             error_msg = f"Can't load CoverageJSON: '{e}'."
             raise EdrLayerException(error_msg)
         layers = covjson_reader.map_layers()
