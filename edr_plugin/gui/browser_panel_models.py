@@ -96,7 +96,7 @@ class SavedQueryItem(QgsDataItem):
         self.parent().refresh()
 
     def actions(self, parent):
-        action_rerun = QAction(QIcon(icon_filepath("reply.png")), "Replay query", parent)
+        action_rerun = QAction(QIcon(icon_filepath("replay.png")), "Replay query", parent)
         action_rerun.triggered.connect(self.replay_query)
         action_delete = QAction(QIcon(icon_filepath("delete.png")), "Delete", parent)
         action_delete.triggered.connect(self.delete_query)
