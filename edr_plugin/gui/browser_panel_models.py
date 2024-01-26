@@ -68,7 +68,7 @@ class EdrServerItem(EdrRootItem):
         queries = saved_queries.get(self.server_url, {})
         items = []
         for query_name in queries.keys():
-            query_item = SavedQuerytItem(self.plugin, self.server_url, query_name, self)
+            query_item = SavedQueryItem(self.plugin, self.server_url, query_name, self)
             query_item.setState(QgsDataItem.Populated)
             query_item.refresh()
             sip.transferto(query_item, self)
@@ -76,7 +76,7 @@ class EdrServerItem(EdrRootItem):
         return items
 
 
-class SavedQuerytItem(QgsDataItem):
+class SavedQueryItem(QgsDataItem):
     def __init__(self, plugin, server_url, query_name, parent):
         self.plugin = plugin
         self.server_url = server_url
