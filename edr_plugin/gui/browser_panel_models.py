@@ -9,7 +9,7 @@ from edr_plugin.utils import icon_filepath
 
 
 class EdrRootItem(QgsDataCollectionItem):
-    """EDR root data containing server groups item with saved queries."""
+    """EDR root data containing server groups item with saved queries within servers."""
 
     def __init__(
         self,
@@ -23,7 +23,6 @@ class EdrRootItem(QgsDataCollectionItem):
         self.plugin = plugin
         self.setIcon(QIcon(icon_filepath("edr.png")))
         self.server_items = []
-        self.base_name = self.name()
 
     def createChildren(self):
         settings = QgsSettings()
@@ -38,29 +37,40 @@ class EdrRootItem(QgsDataCollectionItem):
             self.server_items.append(server_item)
         return items
 
-    def refresh_saved_queries(self):
+    def refresh_server_items(self):
         for item in self.server_items:
             item.refresh()
 
+    def reload_collections(self):
+        self.plugin.ensure_main_dialog_initialized()
+        self.plugin.main_dialog.populate_collections()
+        self.plugin.run()
+
     def actions(self, parent):
-        actions = []
-        action_run = QAction(QIcon(icon_filepath("play.png")), "New query", parent)
-        action_run.triggered.connect(self.plugin.run)
-        actions.append(action_run)
-        action_refresh = QAction(QIcon(icon_filepath("reload.png")), "Refresh", parent)
-        action_refresh.triggered.connect(self.refresh_saved_queries)
-        actions.append(action_refresh)
+        action_new_query = QAction(QIcon(icon_filepath("play.png")), "New query", parent)
+        action_new_query.triggered.connect(self.plugin.run)
+        action_reload_collections = QAction(QIcon(icon_filepath("reload.png")), "Reload collections", parent)
+        action_reload_collections.triggered.connect(self.reload_collections)
+        action_refresh = QAction(QIcon(icon_filepath("refresh.png")), "Refresh", parent)
+        action_refresh.triggered.connect(self.refresh_server_items)
+        actions = [action_new_query, action_reload_collections, action_refresh]
         return actions
 
 
 class EdrServerItem(EdrRootItem):
-    """EDR group data item. Contains saved queries."""
+    """EDR server data item. Contains saved queries."""
 
     def __init__(self, plugin, server_url, parent):
         EdrRootItem.__init__(self, plugin, server_url, parent)
         self.plugin = plugin
         self.server_url = server_url
         self.setIcon(QIcon(icon_filepath("server.png")))
+        self.query_items = []
+
+    def new_server_query(self):
+        self.plugin.ensure_main_dialog_initialized()
+        self.plugin.main_dialog.server_url_cbo.setCurrentText(self.server_url)
+        self.plugin.run()
 
     def createChildren(self):
         settings = QgsSettings()
@@ -73,10 +83,19 @@ class EdrServerItem(EdrRootItem):
             query_item.refresh()
             sip.transferto(query_item, self)
             items.append(query_item)
+            self.query_items.append(query_item)
         return items
+
+    def actions(self, parent):
+        action_new_server_query = QAction(QIcon(icon_filepath("play_solid.png")), "New server query", parent)
+        action_new_server_query.triggered.connect(self.new_server_query)
+        actions = [action_new_server_query]
+        return actions
 
 
 class SavedQueryItem(QgsDataItem):
+    """Saved query item."""
+
     def __init__(self, plugin, server_url, query_name, parent):
         self.plugin = plugin
         self.server_url = server_url
@@ -84,9 +103,9 @@ class SavedQueryItem(QgsDataItem):
         QgsDataItem.__init__(self, QgsDataItem.Collection, parent, query_name, f"/{server_url}/{query_name}")
         self.setIcon(QIcon(icon_filepath("request.png")))
 
-    def replay_query(self):
+    def repeat_query(self):
         self.plugin.ensure_main_dialog_initialized()
-        self.plugin.main_dialog.query_data_collection()
+        self.plugin.main_dialog.repeat_saved_query_data_collection(self.server_url, self.query_name)
 
     def delete_query(self):
         settings = QgsSettings()
@@ -96,15 +115,17 @@ class SavedQueryItem(QgsDataItem):
         self.parent().refresh()
 
     def actions(self, parent):
-        action_rerun = QAction(QIcon(icon_filepath("replay.png")), "Replay query", parent)
-        action_rerun.triggered.connect(self.replay_query)
+        action_repeat = QAction(QIcon(icon_filepath("replay.png")), "Repeat query", parent)
+        action_repeat.triggered.connect(self.repeat_query)
         action_delete = QAction(QIcon(icon_filepath("delete.png")), "Delete", parent)
         action_delete.triggered.connect(self.delete_query)
-        actions = [action_rerun, action_delete]
+        actions = [action_repeat, action_delete]
         return actions
 
 
 class SavedQueriesItemProvider(QgsDataItemProvider):
+    """Saved queries provider."""
+
     def __init__(self, plugin):
         QgsDataItemProvider.__init__(self)
         self.root_item = None
