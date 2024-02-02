@@ -3,8 +3,7 @@ import json
 import sip
 from qgis.core import QgsDataCollectionItem, QgsDataItem, QgsDataItemProvider, QgsDataProvider, QgsSettings
 from qgis.PyQt.QtGui import QIcon
-from qgis.PyQt.QtWidgets import QAction
-
+from qgis.PyQt.QtWidgets import QAction, QInputDialog
 from edr_plugin.utils import EdrSettingsPath, icon_filepath
 
 
@@ -25,10 +24,15 @@ class EdrRootItem(QgsDataCollectionItem):
         self.server_items = []
 
     def createChildren(self):
+        del self.server_items[:]
         settings = QgsSettings()
         available_servers = settings.value(EdrSettingsPath.SAVED_SERVERS.value, [])
+        saved_queries = json.loads(settings.value(EdrSettingsPath.SAVED_QUERIES.value, "{}"))
         items = []
         for server_url in available_servers:
+            queries = saved_queries.get(server_url, {})
+            if not queries:
+                continue
             server_item = EdrServerItem(self.plugin, server_url, self)
             server_item.setState(QgsDataItem.Populated)
             server_item.refresh()
@@ -38,8 +42,8 @@ class EdrRootItem(QgsDataCollectionItem):
         return items
 
     def refresh_server_items(self):
-        for item in self.server_items:
-            item.refresh()
+        self.depopulate()
+        self.createChildren()
 
     def reload_collections(self):
         self.plugin.ensure_main_dialog_initialized()
@@ -107,6 +111,24 @@ class SavedQueryItem(QgsDataItem):
         self.plugin.ensure_main_dialog_initialized()
         self.plugin.main_dialog.repeat_saved_query_data_collection(self.server_url, self.query_name)
 
+    def rename_query(self):
+        settings = QgsSettings()
+        saved_queries = json.loads(settings.value(EdrSettingsPath.SAVED_QUERIES.value, "{}"))
+        new_name, accept = QInputDialog.getText(None, "Rename", "New name", text=self.name())
+        if accept:
+            server_saved_queries = saved_queries[self.server_url]
+            if not new_name:
+                self.plugin.communication.show_warn("Empty name provided. Renaming canceled!")
+                return
+            if new_name in server_saved_queries:
+                self.plugin.communication.show_warn("Query name already exists. Renaming canceled!")
+                return
+            self.setName(new_name)
+            server_saved_queries[new_name] = server_saved_queries[self.query_name]
+            del server_saved_queries[self.query_name]
+            settings.setValue(EdrSettingsPath.SAVED_QUERIES.value, json.dumps(saved_queries))
+            self.parent().refresh()
+
     def delete_query(self):
         settings = QgsSettings()
         saved_queries = json.loads(settings.value(EdrSettingsPath.SAVED_QUERIES.value, "{}"))
@@ -117,9 +139,11 @@ class SavedQueryItem(QgsDataItem):
     def actions(self, parent):
         action_repeat = QAction(QIcon(icon_filepath("replay.png")), "Repeat query", parent)
         action_repeat.triggered.connect(self.repeat_query)
+        action_rename = QAction(QIcon(icon_filepath("rename.png")), "Rename query", parent)
+        action_rename.triggered.connect(self.rename_query)
         action_delete = QAction(QIcon(icon_filepath("delete.png")), "Delete", parent)
         action_delete.triggered.connect(self.delete_query)
-        actions = [action_repeat, action_delete]
+        actions = [action_repeat, action_rename, action_delete]
         return actions
 
 
