@@ -23,7 +23,7 @@ repository=https://github.com/lutraconsulting/qgis-plugin-edr
 hasProcessingProvider=no
 # Uncomment the following line and add your changelog:
 changelog=<p>
- <p>0.8.0 Bugfixes + enhancements
+ <p>0.8.0 Bugfixes/enhancements: #29, #30, #37
  <p>0.7.0 Added support for the post queries + saved queries handling enhancements
  <p>0.6.0 Added handling of the saved queries via browser panel and managing server URLs
  <p>0.5.1 Improved handling of the CoverageJSON point datasets + minor bugfixes
