@@ -70,6 +70,7 @@ class EdrDialog(QDialog):
         self.cancel_pb.clicked.connect(self.close)
         self.run_and_save_pb.clicked.connect(partial(self.query_data_collection, True))
         self.run_pb.clicked.connect(self.query_data_collection)
+        self.run_pb.setFocus()
         if server_urls:
             self.populate_collections()
             self.populate_collection_data()
